@@ -1,5 +1,8 @@
 import fnmatch
 import os
+import re
+
+import pandas as pd
 
 
 class LogReader:
@@ -7,8 +10,10 @@ class LogReader:
         """
         Initialise un lecteur de logs avec une liste vide pour stocker les lignes lues.
         """
-        self.lignes_lues = []
-        self.repertoire = repertoire
+        self.repertoire = repertoire  # Attribut pour stocker le chemin du répertoire
+        self.lignes_extraites = []  # Liste pour accumuler les lignes extraites
+        self.df_logs = pd.DataFrame(columns=['DateHeure', 'Evenement', 'Utilisateur',
+                                             'AdresseIP'])  # DataFrame pour stocker les informations extraites
 
     def trouver_fichiers_logs(self, pattern="secure*"):
         """
@@ -29,26 +34,53 @@ class LogReader:
             print(f"Erreur : Le répertoire {self.repertoire} n'a pas été trouvé.")
             return []
 
-    def lire_logs(self, fichier_log):
+    def lire_et_extraire_logs(self, fichier_log):
         """
-        Lit un fichier de logs et ajoute son contenu dans l'attribut 'lignes_lues'.
+         Lit un fichier de logs ligne par ligne, extrait les informations clés avec une regex,
+        et stocke ces informations dans une liste de dictionnaires.
         :param fichier_log:Chemin vers le fichier de logs à lire
         """
+        # Expression rationnelle pour capturer les informations
+        regex = r"([A-Za-z]{3} \d{2} \d{2}:\d{2}:\d{2}) .* (Invalid user|Failed password) (\w+) from (\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})"
+
         try:
             with open(fichier_log, 'r') as f:
-                self.lignes_lues.extend(f.readlines())  # Ajouter les lignes lues dans l'attribut 'lignes_lues'
-            print(f"Le fichier {fichier_log} a été lu avec succès.")
+                for ligne in f:
+                    match = re.search(regex, ligne)
+                    if match:
+                        date_heure = match.group(1)
+                        evenement = match.group(2)
+                        utilisateur = match.group(3)
+                        adresse_ip = match.group(4)
+
+                        # Accumuler les informations sous forme de dictionnaire dans une liste
+                        nouvelle_ligne = {
+                            'DateHeure': date_heure,
+                            'Evenement': evenement,
+                            'Utilisateur': utilisateur,
+                            'AdresseIP': adresse_ip
+                        }
+                        self.lignes_extraites.append(nouvelle_ligne)
+
+            print(f"Le fichier {fichier_log} a été lu et les informations ont été extraites avec succès.")
+
         except FileNotFoundError:
             print(f"Erreur : Le fichier {fichier_log} n'a pas été trouvé.")
 
-    def afficher_lignes_lues(self):
+    def creer_dataframe(self):
         """
- Affiche le nombre de lignes lues et les premières lignes de tous les fichiers.
+        Crée un DataFrame Pandas à partir des lignes extraites et l'affecte à l'attribut df_logs.
         """
-        if self.lignes_lues:
-            print(f"Nombre total de lignes lues : {len(self.lignes_lues)}")
-            print("Premières lignes lues :")
-            for ligne in self.lignes_lues[:5]:  # Afficher les 5 premières lignes lues
-                print(ligne.strip())
+        if self.lignes_extraites:
+            self.df_logs = pd.DataFrame(self.lignes_extraites)
+            self.lignes_extraites.clear()  # Effacer la liste des lignes extraites
+            print("Le DataFrame a été créé avec succès.")
         else:
-            print("Aucune ligne n'a été lue.")
+            print("Aucune ligne n'a été extraite. Le DataFrame est vide.")
+
+    def afficher_dataframe(self):
+        """
+        Affiche le DataFrame contenant les informations extraites des logs.
+        """
+        print("\nDataFrame des logs extraits:")
+        print(self.df_logs)

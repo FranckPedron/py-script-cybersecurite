@@ -16,14 +16,17 @@ def main():
     # Trouver tous les fichiers de logs correspondant au pattern dans le répertoire
     fichiers_logs = lecteur.trouver_fichiers_logs(pattern=args.pattern)
 
-    # Si des fichiers de logs sont trouvés, les lire un par un
+    # Si des fichiers de logs sont trouvés, les lire un par un et extraire les informations
     if fichiers_logs:
         for fichier_log in fichiers_logs:
             print(f"\nLecture du fichier : {fichier_log}")
-            lecteur.lire_logs(fichier_log)  # Lire le fichier de logs
+            lecteur.lire_et_extraire_logs(fichier_log)  # Lire et extraire les informations du fichier de logs
 
-        # Afficher les lignes lues
-        lecteur.afficher_lignes_lues()
+        # Créer le DataFrame une fois que tous les fichiers ont été lus
+        lecteur.creer_dataframe()
+
+        # Afficher le DataFrame contenant les informations extraites
+        lecteur.afficher_dataframe()
     else:
         print(f"Aucun fichier de logs correspondant au pattern '{args.pattern}' n'a été trouvé dans le répertoire.")
 
