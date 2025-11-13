@@ -1,5 +1,6 @@
 import argparse
 
+from modules.log_analyzer import LogAnalyzer
 from modules.log_reader import LogReader
 
 
@@ -8,7 +9,9 @@ def main():
     parser.add_argument("repertoire", help="Chemin vers le répertoire contenant les fichiers de logs", type=str)
     parser.add_argument("--pattern", help="Pattern pour filtrer les fichiers de logs (par défaut 'secure*')", type=str,
                         default="secure*")
-    parser.add_argument("--seuil", help="Seuil d'alerte pour les adresses IP suspectes", type=int, default=100)
+    parser.add_argument("--seuil", help="Seuil d'alerte pour les adresses IP suspectes", type=int, default=10)
+    parser.add_argument("--intervalle", help="Intervalle de temps pour l'analyse des accès (par défaut '1min')",
+                        type=str, default="1min")
     args = parser.parse_args()
 
     # Créer une instance de LogReader avec le chemin du répertoire
@@ -29,8 +32,8 @@ def main():
         # Créer une instance de LogAnalyzer pour analyser les logs
         analyseur = LogAnalyzer(lecteur.df_logs)
 
-        # Analyser la fréquence des adresses IP
-        analyseur.analyser_frequence_ips(seuil_alerte=args.seuil)
+        # Analyser la fréquence des adresses IP dans l'intervalle de temps spécifié
+        analyseur.analyser_frequence_ips(intervalle_temps=args.intervalle, seuil_alerte=args.seuil)
 
         # Afficher le DataFrame contenant les informations extraites
         # lecteur.afficher_dataframe()
