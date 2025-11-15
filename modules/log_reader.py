@@ -11,7 +11,8 @@ class LogReader:
         Initialise un lecteur de logs avec une liste vide pour stocker les lignes lues.
         """
         self.repertoire = repertoire  # Attribut pour stocker le chemin du répertoire
-        self.lignes_extraites = []  # Liste pour accumuler les lignes extraites
+        self.lignes_extraites_dict = []  # Liste pour accumuler les lignes extraites
+        self.lignes_extraites_brut = []  # Liste pour accumuler les lignes extraites en brut
         self.df_logs = pd.DataFrame(columns=['DateHeure', 'Evenement', 'Utilisateur',
                                              'AdresseIP'])  # DataFrame pour stocker les informations extraites
 
@@ -24,8 +25,8 @@ class LogReader:
         :return: Liste des fichiers trouvés correspondant au pattern dans le répertoire.
         """
         fichiers_logs = []
-
         try:
+            # Parcourt le répertoire et récupère tous les fichiers correspondant au pattern donné
             for fichier in os.listdir(self.repertoire):
                 if fnmatch.fnmatch(fichier, pattern):
                     fichiers_logs.append(os.path.join(self.repertoire, fichier))
@@ -33,6 +34,24 @@ class LogReader:
         except FileNotFoundError:
             print(f"Erreur : Le répertoire {self.repertoire} n'a pas été trouvé.")
             return []
+
+    def lire_logs_bruts(self, fichier_log):
+        """
+        Lit un fichier de logs ligne par ligne, et stocke le résultat dans une liste.
+
+
+        :param fichier_log : Chemin vers le fichier de logs à lire.
+        """
+
+        try:
+            with open(fichier_log, 'r') as f:
+                for ligne in f:
+                    self.lignes_extraites_brut.append(ligne)
+
+            print(f"Le fichier {fichier_log} a été lu avec succès.")
+
+        except FileNotFoundError:
+            print(f"Erreur : Le fichier {fichier_log} n'a pas été trouvé.")
 
     def lire_et_extraire_logs(self, fichier_log):
         """
@@ -60,7 +79,7 @@ class LogReader:
                             'Utilisateur': utilisateur,
                             'AdresseIP': adresse_ip
                         }
-                        self.lignes_extraites.append(nouvelle_ligne)
+                        self.lignes_extraites_dict.append(nouvelle_ligne)
 
             print(f"Le fichier {fichier_log} a été lu et les informations ont été extraites avec succès.")
 
@@ -71,9 +90,9 @@ class LogReader:
         """
         Crée un DataFrame Pandas à partir des lignes extraites et l'affecte à l'attribut df_logs.
         """
-        if self.lignes_extraites:
-            self.df_logs = pd.DataFrame(self.lignes_extraites)
-            self.lignes_extraites.clear()  # Effacer la liste des lignes extraites
+        if self.lignes_extraites_dict:
+            self.df_logs = pd.DataFrame(self.lignes_extraites_dict)
+            self.lignes_extraites_dict.clear()  # Effacer la liste des lignes extraites
             print("Le DataFrame a été créé avec succès.")
         else:
             print("Aucune ligne n'a été extraite. Le DataFrame est vide.")
